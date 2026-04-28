@@ -225,7 +225,10 @@ class CIDocContext:
                 commands.append(cmd)
 
             # Build the Sphinx documentation for this language
-            cmd = ["sh", "-c", f". .venv/bin/activate && sphinx-build -b html -D language={lang} -D html_baseurl='{self.doc_base_url}' ./source ./build/html/{self.branch_name}/{lang}"]
+            ## Remove the https:// prefix for the -D html_baseurl parameter 
+            ## since Sphinx expects a relative URL for correct link generation
+            html_baseurl = self.doc_base_url.split("https://")[-1]
+            cmd = ["sh", "-c", f". .venv/bin/activate && sphinx-build -b html -D language={lang} -D html_baseurl='{html_baseurl}' ./source ./build/html/{self.branch_name}/{lang}"]
             commands.append(cmd)
 
         # 4. Create index.html at the root of the HTML output that redirects to the default language (e.g., English) for convenience
