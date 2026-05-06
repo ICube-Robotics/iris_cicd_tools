@@ -173,6 +173,8 @@ class CIDocContext:
         and copy operations required to build the documentation.
         This allows both Dagger and Invoke to use the exact same build logic.
         Supposes that the working directory is set to the sphinx directory.
+        Commands are executed from the sphinx folder ('doc/sphinx') to ensure that 
+        all paths in conf.py and the Sphinx build process work correctly.
         """
         commands = []
 
@@ -223,6 +225,22 @@ class CIDocContext:
                 logo_name = f"logo.{logo_extension}" if logo_extension else "logo.svg"
                 cmd = ["sh", "-c", f"cp source/{logo_path} build/html/{self.branch_name}/{lang}/_static/{logo_name}"]
                 commands.append(cmd)
+
+            if 'python_api' in html_context:
+                # If the documentation includes a Python API reference, we need to generate the HTML files.
+                # We also specify the output directory for the generated files to be inside the Sphinx 
+                # source directory to ensure they are included in the build.
+                for module in html_context['python_api']:
+                    src = module.get("source_from_sphinx")
+                    if not src:
+                        print(f"WARNING: Missing 'source_from_sphinx' key for module in 'python_api' configuration: {module}. Skipping API doc generation for this module.")
+                        continue
+                    output = module.get("output_from_sphinx")
+                    if not output:
+                        print(f"WARNING: Missing 'output_from_sphinx' key for module in 'python_api' configuration: {module}. Skipping API doc generation for this module.")
+                        continue
+                    cmd = ["sh", "-c", f". .venv/bin/activate && sphinx-apidoc -o {output} {src}"]
+                    commands.append(cmd)
 
             # Build the Sphinx documentation for this language
             ## Remove the https:// prefix for the -D html_baseurl parameter 
